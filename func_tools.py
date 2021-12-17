@@ -53,6 +53,7 @@ def grad_hub_matrix(X,delta,A,labda):
     mask_1 = q_norm > delta
     q[mask] = q[mask]/delta
     q[mask_1] = q[mask_1]/q_norm[mask_1,np.newaxis]
+    q = q * tool_mat[:,:,np.newaxis]
     return (q*labda).sum(axis=0)+X-A
 
 
