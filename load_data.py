@@ -39,3 +39,10 @@ def load_mnist():
 def load_mnist_dense():
     data, label = load_mnist()
     return np.asarray(data.todense()).T, label
+
+if __name__ == '__main__':
+    # wine, mnist, vowel, segment 可替换
+    # 加载稀疏矩阵
+    wine_data, wine_label = load_wine()
+    # 加载稠密矩阵
+    wine_data, wine_label = load_wine_dense()
