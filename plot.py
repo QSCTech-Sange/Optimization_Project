@@ -18,5 +18,11 @@ def plot_generated_data(centroids, points, N, palette='muted'):
     
     plt.show()
 
+def plot_res_data(points,result,palette='muted'):
+    colors = sns.color_palette(palette,n_colors=len(points))
+    for i in range(len(points)):
+        plt.scatter(points[i][0],points[i][1],color=colors[i])
+        plt.scatter(result[i][0],result[i][1],color=colors[i],marker='x')
+
 if __name__ == '__main__':
     pass
