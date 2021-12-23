@@ -3,8 +3,8 @@
 
 from func_tools import *
 
-def backtrack(X,func,gX,d,alpha=1,gamma=0.1,sigma=0.5):
-    right = func(X) + alpha*gamma*gX.T.dot(d)
+def backtrack(X,func,gX,d,alpha=1,gamma=0.01,sigma=0.5):
+    right = func(X) + alpha*gamma*mat2vec(gX.T).dot(mat2vec(d))
     while func(X+alpha*d) > right:
         alpha = alpha * sigma
     return alpha
@@ -18,4 +18,5 @@ def GM(X,func,grad,tol):
         step_size = backtrack(X,func,gX,-gX)
         X = X - step_size * gX
         gX = grad(X)
+        # print(norm2(gX))
     return X
