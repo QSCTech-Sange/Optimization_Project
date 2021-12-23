@@ -10,7 +10,7 @@ def AGM(grad,x0,step_size,tol):
     t_0 = t = 1
     x = x_0 = x0
     loss = norm(grad(x))
-
+    losses = [loss]
     while loss > tol:
         # get beta_k (beta, t均是标量)
         beta = (t_0 - 1) / t
@@ -21,6 +21,5 @@ def AGM(grad,x0,step_size,tol):
         x_0 = x
         x = y - step_size * grad(y)
         loss = norm(grad(x))
-        # print(loss)
-
-    return x
+        losses.append(loss)
+    return x,losses
