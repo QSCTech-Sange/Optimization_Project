@@ -3,8 +3,8 @@
 
 from func_tools import *
 
-def backtrack(X,func,gX,d,alpha=1,sigma=0.1):
-    right = func(X) + alpha*sigma*gX.T.dot(d)
+def backtrack(X,func,gX,d,alpha=1,gamma=0.1,sigma=0.5):
+    right = func(X) + alpha*gamma*gX.T.dot(d)
     while func(X+alpha*d) > right:
         alpha = alpha * sigma
     return alpha

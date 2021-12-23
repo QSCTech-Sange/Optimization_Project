@@ -56,7 +56,34 @@ def grad_hub_matrix(X,delta,A,labda):
     q = q * tool_mat[:,:,np.newaxis]
     return (q*labda).sum(axis=0)+X-A
 
+def mat2vec(mat):
+    return mat.reshape(mat.shape[0]*mat.shape[1])
 
+def vec2mat(vec,n,d):
+    return vec.reshape((n,d))
+
+# 给定计算出来的 X，返回每个点所属的group编号
+# X 格式类似 [x1,x2,x3,...]，每个xi是一个向量
+def get_group(ans,tol=0.01):
+    groups = np.arange(len(ans))
+    visited = [False] * len(ans)
+    group_count = -1
+    tol = tol**2
+    for i in range(len(ans)):
+        if not visited[i]:
+            group_count += 1
+            groups[i] = group_count
+            visited[i] = True
+            arr = [i]
+            while arr:
+                node = arr.pop()
+                for j in range(len(ans)):
+                    if not visited[j] and norm2(ans[node]-ans[j]) <= tol:
+                        arr.append(j)
+                        groups[j] = groups[node]
+                        visited[j] = True
+    return groups
+    
 def loss_func(X,A,lbd,delta):
     n = len(X)
     Xn = np.tile(X,(n,1,1))

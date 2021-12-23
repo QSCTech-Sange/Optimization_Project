@@ -18,11 +18,16 @@ def plot_generated_data(centroids, points, N, palette='muted'):
     
     plt.show()
 
-def plot_res_data(points,result,palette='muted'):
-    colors = sns.color_palette(palette,n_colors=len(points))
+# 绘制分组的结果
+# 参数 way = ans 的时候，只绘制结果，不绘制簇心
+# 参数 way = points 的时候，只绘制簇心，不绘制结果
+def plot_res_data(points,result,groups,palette='muted',way='all'):
+    colors = sns.color_palette(palette,n_colors=np.unique(groups).shape[0])
     for i in range(len(points)):
-        plt.scatter(points[i][0],points[i][1],color=colors[i])
-        plt.scatter(result[i][0],result[i][1],color=colors[i],marker='x')
+        if way!='ans':
+            plt.scatter(points[i][0],points[i][1],color=colors[groups[i]])
+        if way!='points':
+            plt.scatter(result[i][0],result[i][1],color=colors[groups[i]],marker='x')
 
 if __name__ == '__main__':
     pass
