@@ -9,7 +9,7 @@ sns.set_style(style="darkgrid")
 
 def plot_generated_data(centroids, points, N, palette='muted'):
 
-    begin = np.pad(N.cumsum(), (1,0))
+    begin = np.pad(N.cumsum(), (1,0), mode='constant')
     colors = sns.color_palette(palette,n_colors=len(centroids))
 
     for i in range(len(centroids)):
