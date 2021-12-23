@@ -57,6 +57,19 @@ def grad_hub_matrix(X,delta,A,labda):
     return (q*labda).sum(axis=0)+X-A
 
 
+def loss_func(X,A,lbd,delta):
+    n = len(X)
+    Xn = np.tile(X,(n,1,1))
+    XnT = np.transpose(Xn,axes=(1,0,2))
+    mask = np.triu(np.ones((n,n)),1)
+    q = (XnT - Xn) * mask[:,:,np.newaxis]
+    q_norm = np.linalg.norm(q,axis=2)
+    less = q_norm<=delta
+    more = q_norm > delta
+    q[less] = q_norm[less,np.newaxis]**2 / 2 / delta
+    q[more] = q_norm[more,np.newaxis] - delta/2
+    return 0.5 * norm2(X-A) + lbd * q.sum()
+
 if __name__ == '__main__':
     A = np.array([12,24,10,0,0,0,0,0,0])
     sA = sp.sparse.csr_matrix(A)
