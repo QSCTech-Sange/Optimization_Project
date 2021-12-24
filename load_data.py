@@ -3,11 +3,12 @@
 
 import scipy.io
 import numpy as np
+import sparse
 
 def load_wine():
     wine_data = scipy.io.loadmat('data/wine/wine_data.mat')
     wine_label = scipy.io.loadmat('data/wine/wine_label.mat')
-    return wine_data['A'],wine_label['b']
+    return sparse.COO.from_scipy_sparse(wine_data['A'].T),wine_label['b']
 
 def load_wine_dense():
     data, label = load_wine()

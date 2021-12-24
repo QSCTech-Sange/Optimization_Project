@@ -22,7 +22,7 @@ def test_sparse(func,sparse_data):
 def norm(matrix,axis=None):
     if type(matrix)==np.ndarray:
         return np.linalg.norm(matrix,axis)
-    return sp.sparse.linalg.norm(matrix,axis)
+    return (matrix**2).sum(axis=axis)**0.5
 
 # 高效范数方
 # 已经验证过是相等的了
@@ -42,20 +42,18 @@ def grad_hub_vec(vec,delta):
 # ********这个目前只对稠密有效*********
 # 它非常的复杂，我不认为有人能光看下面代码，不看注释，能知道这是啥
 def grad_hub_matrix(X,delta,A,labda):
-    num_points = len(X)
-    Xn = np.tile(X,(num_points,1,1))
-    XnT = np.transpose(Xn,axes=(1,0,2))
-    mat = Xn - XnT
-    tool_mat = np.triu(-np.ones((num_points,num_points))) + np.tril(np.ones((num_points,num_points)))
+    n,d = X.shape
+    if type(X)==np.ndarray:
+        mat = X.reshape(1,n,d) - X.reshape(n,1,d)
+    else:
+        mat = X.reshape((1,n,d)) - X.reshape((n,1,d))
+    tool_mat = np.triu(-np.ones((n,n))) + np.tril(np.ones((n,n)))
     q = mat * tool_mat[:,:,np.newaxis]
-    q_norm = np.linalg.norm(q,axis=2)
-    mask = q_norm <= delta
-    mask_1 = q_norm > delta
-    q[mask] = q[mask]/delta
-    q[mask_1] = q[mask_1]/q_norm[mask_1,np.newaxis]
+    q_norm = (q**2).sum(axis=2)**0.5
+    q = np.where((q_norm <= delta)[:,:,np.newaxis],q/delta,q/q_norm[:,:,np.newaxis])
     q = q * tool_mat[:,:,np.newaxis]
     return (q*labda).sum(axis=0)+X-A
-
+        
 def mat2vec(mat):
     return mat.reshape(mat.shape[0]*mat.shape[1])
 
@@ -64,7 +62,10 @@ def vec2mat(vec,n,d):
 
 # 给定计算出来的 X，返回每个点所属的group编号
 # X 格式类似 [x1,x2,x3,...]，每个xi是一个向量
+# 一个简单的 DFS
 def get_group(ans,tol=0.01):
+    if type(ans)!=np.ndarray:
+        ans = ans.todense()
     groups = np.arange(len(ans))
     visited = [False] * len(ans)
     group_count = -1
@@ -83,7 +84,7 @@ def get_group(ans,tol=0.01):
                         groups[j] = groups[node]
                         visited[j] = True
     return groups
-    
+
 def loss_func(X,A,lbd,delta):
     n = len(X)
     Xn = np.tile(X,(n,1,1))
