@@ -3,6 +3,7 @@
 
 # ⚠️ 哪些测试过在稀疏矩阵下有效，要标注一下
 import scipy as sp
+import scipy.sparse as sps
 import numpy as np
 
 # 验证一个函数是否对稀疏矩阵也有效
@@ -97,6 +98,16 @@ def loss_func(X,A,lbd,delta):
     q[less] = q_norm[less,np.newaxis]**2 / 2 / delta
     q[more] = q_norm[more,np.newaxis] - delta/2
     return 0.5 * norm2(X-A) + lbd * q.sum()
+
+# 我愿称之为最强B矩阵生成法
+def gen_B(n=5,sparse=False):
+    Y = np.repeat(np.arange(n-1),np.arange(n-1,0,-1))
+    X = np.arange(n*(n-1)//2)
+    X = np.r_[X,np.arange(n*(n-1)//2)]
+    Y = np.r_[Y,np.arange(1,(n-1)*n//2+1) - np.repeat(np.array(np.r_[0,np.arange(n-2,0,-1)]).cumsum(),np.arange(n-1,0,-1))]
+    data = np.r_[np.ones(n*(n-1)//2,dtype=np.int8),-np.ones(n*(n-1)//2,dtype=np.int8)]
+    B = sps.csr_matrix((data,(X,Y)),shape=(n*(n-1)//2,n))
+    return B if sparse else B.toarray()
 
 if __name__ == '__main__':
     A = np.array([12,24,10,0,0,0,0,0,0])
