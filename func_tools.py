@@ -100,7 +100,7 @@ def loss_func(X,A,lbd,delta):
     return 0.5 * norm2(X-A) + lbd * q.sum()
 
 # 我愿称之为最强B矩阵生成法
-def gen_B(n=5,sparse=False):
+def gen_B(n,sparse=True):
     Y = np.repeat(np.arange(n-1),np.arange(n-1,0,-1))
     X = np.arange(n*(n-1)//2)
     X = np.r_[X,np.arange(n*(n-1)//2)]
@@ -108,6 +108,30 @@ def gen_B(n=5,sparse=False):
     data = np.r_[np.ones(n*(n-1)//2,dtype=np.int8),-np.ones(n*(n-1)//2,dtype=np.int8)]
     B = sps.csr_matrix((data,(X,Y)),shape=(n*(n-1)//2,n))
     return B if sparse else B.toarray()
+
+# 可能用不上了
+def gen_C(n,sparse=True):
+    Y = np.repeat(np.arange(n),n-1)
+    X = np.arange(n*(n-1))
+    q = np.tile(np.arange(n),reps=(n,1)).flatten()
+    p = np.arange(0,(n+1)*n,n+1)
+    Y = np.r_[Y,np.delete(q,p)]
+    X = np.r_[X,np.arange(n*(n-1))]
+    data = np.r_[np.ones(n*(n-1),dtype=np.int8),-np.ones(n*(n-1),dtype=np.int8)]
+    C = sps.csr_matrix((data,(X,Y)),shape=(n*(n-1),n))
+    return C if sparse else C.toarray()
+
+# 我愿称之为最强D矩阵生成法
+def gen_D(n,sparse=True):
+    X = np.r_[np.repeat(np.arange(n),np.arange(n-1,-1,-1)),np.repeat(np.arange(1,n),np.arange(1,n))]
+    q = np.tile(np.arange(n-1,0,-1),reps=(n-1,1))
+    q[:,0] = np.arange(4)
+    q = np.tril(q)
+    q = np.tril(q.cumsum(axis=1))
+    Y = np.r_[np.arange((n)*(n-1)//2),0,q[q!=0]]
+    data = np.r_[np.ones((n)*(n-1)//2,dtype=np.int8),-np.ones(n*(n-1)//2,dtype=np.int8)]
+    C = sps.csr_matrix((data,(X,Y)),shape=(n,n*(n-1)//2))
+    return C if sparse else C.toarray()
 
 if __name__ == '__main__':
     A = np.array([12,24,10,0,0,0,0,0,0])
