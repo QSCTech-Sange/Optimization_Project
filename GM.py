@@ -22,31 +22,34 @@ def GM(X,func,grad,tol):
     D = gen_D(len(X))
     gX = grad(X,B,D)
     norm_ = norm(gX)
-    loss = [norm_]
+    loss = [func(X,B)] ##修改了loss function的定义
     while norm_ > tol:
         step_size = backtrack(X,func,gX,-gX,B)
         X = X - step_size * gX
         gX = grad(X,B,D)
         norm_ = norm(gX)
-        loss.append(norm_)
+        loss.append(func(X,B)) ##修改了loss function的定义
     return X,loss
 
 def GM_BB(X,func,grad,tol):
-    gX = grad(X)
+    B = gen_B(len(X))
+    D = gen_D(len(X))
+    gX = grad(X,B,D)
     iter = 0
     norm_2 = norm2(gX)
-    loss = [norm_2]
+    loss = [func(X,B)] ##修改了loss function的定义
     tol = tol ** 2
     while norm_2 > tol:
         if iter ==0:
-            step_size = backtrack(X,func,gX,-gX)
+            step_size = backtrack(X,func,gX,-gX,B)
         else:
             step_size = BB(X,X_1,gX,gX_1)
         X_1 = X    
         X = X - step_size * gX
-        gX_1 = grad(X_1)
-        gX = grad(X)
+        gX_1 = grad(X_1,B,D)
+        gX = grad(X,B,D)
         norm_2 = norm2(gX)
-        loss.append(norm_2)
-        iter = iter +1
-    return X,loss,iter
+        loss.append(func(X,B)) ##修改了loss function的定义
+        iter = iter + 1
+
+    return X,loss
