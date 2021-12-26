@@ -4,9 +4,9 @@
 from func_tools import *
 import pandas as pd
 
-def backtrack(X,func,gX,d,alpha=1,gamma=0.01,sigma=0.5):
-    right = func(X) + alpha*gamma*mat2vec(gX.T).dot(mat2vec(d))
-    while func(X+alpha*d) > right:
+def backtrack(X,func,gX,d,B,alpha=1,gamma=0.01,sigma=0.5):
+    right = func(X,B) + alpha*gamma*mat2vec(gX.T).dot(mat2vec(d))
+    while func(X+alpha*d,B) > right:
         alpha = alpha * sigma
     return alpha
 
@@ -18,16 +18,17 @@ def BB(X,X_1,gX,gX_1):
 
 
 def GM(X,func,grad,tol):
-    gX = grad(X)
-    norm_2 = norm2(gX)
-    loss = [norm_2]
-    tol = tol ** 2
-    while norm_2 > tol:
-        step_size = backtrack(X,func,gX,-gX)
+    B = gen_B(len(X))
+    D = gen_D(len(X))
+    gX = grad(X,B,D)
+    norm_ = norm(gX)
+    loss = [norm_]
+    while norm_ > tol:
+        step_size = backtrack(X,func,gX,-gX,B)
         X = X - step_size * gX
-        gX = grad(X)
-        norm_2 = norm2(gX)
-        loss.append(norm_2)
+        gX = grad(X,B,D)
+        norm_ = norm(gX)
+        loss.append(norm_)
     return X,loss
 
 def GM_BB(X,func,grad,tol):

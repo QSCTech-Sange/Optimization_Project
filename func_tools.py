@@ -17,16 +17,21 @@ def test_sparse(func,sparse_data):
     return np.allclose(np.asarray(func(sparse_data).todense()),func(dense_data))
 
 # 对矩阵（向量）求Frobenius norm
-# 已经验证过是相等的了
-# 当 axis = 2 的时候，给定三维矩阵（最内层表示x1一个向量），这样输出的结果是对每一个xi进行求norm
-# eg. 当一个矩阵2x2，这四个项每一个都是向量，此时 norm(矩阵，axis=2)，返回的结果仍然是2*2的，且对应点的值是向量的norm
+# 不加 axis，是整个矩阵求norm（得到一个标量）
+# 加了 axis=0，是每一行求norm，得到一个向量，但是转为了n行1列的矩阵
 def norm(matrix,axis=None):
-    if type(matrix)==np.ndarray:
-        return np.linalg.norm(matrix,axis)
-    return (matrix**2).sum(axis=axis)**0.5
+    if axis:
+        if type(matrix)==np.ndarray:
+            return np.linalg.norm(matrix,axis=1).reshape((-1,1))
+        return sp.sparse.linalg.norm(matrix,axis=1).reshape((-1,1))
+    else:
+        if type(matrix)==np.ndarray:
+            return np.linalg.norm(matrix)
+        return sp.sparse.linalg.norm(matrix)     
 
 # 高效范数方
 # 已经验证过是相等的了
+# 返回的是标量！
 def norm2(matrix):
     if type(matrix)==np.ndarray:
         return (matrix**2).sum()
@@ -40,20 +45,11 @@ def grad_hub_vec(vec,delta):
 # 对 X（所有xi） 求导，X是一个包含所有xi的矩阵，xi=[...]为内层,即 n * d 的矩阵
 # A 是初始点
 # delta 是参数
-# ********这个目前只对稠密有效*********
-# 它非常的复杂，我不认为有人能光看下面代码，不看注释，能知道这是啥
-def grad_hub_matrix(X,delta,A,labda):
-    n,d = X.shape
-    if type(X)==np.ndarray:
-        mat = X.reshape(1,n,d) - X.reshape(n,1,d)
-    else:
-        mat = X.reshape((1,n,d)) - X.reshape((n,1,d))
-    tool_mat = np.triu(-np.ones((n,n))) + np.tril(np.ones((n,n)))
-    q = mat * tool_mat[:,:,np.newaxis]
-    q_norm = (q**2).sum(axis=2)**0.5
-    q = np.where((q_norm <= delta)[:,:,np.newaxis],q/delta,q/q_norm[:,:,np.newaxis])
-    q = q * tool_mat[:,:,np.newaxis]
-    return (q*labda).sum(axis=0)+X-A
+def grad_hub_matrix(X,delta,A,labda,B,D):
+    y = B.dot(X)
+    ynorm = norm(y,axis=1)
+    y = np.where(ynorm >= delta, y/ynorm, y/delta)
+    return X - A + labda * D.dot(y)
         
 def mat2vec(mat):
     return mat.reshape(mat.shape[0]*mat.shape[1])
@@ -86,18 +82,12 @@ def get_group(ans,tol=0.01):
                         visited[j] = True
     return groups
 
-def loss_func(X,A,lbd,delta):
-    n = len(X)
-    Xn = np.tile(X,(n,1,1))
-    XnT = np.transpose(Xn,axes=(1,0,2))
-    mask = np.triu(np.ones((n,n)),1)
-    q = (XnT - Xn) * mask[:,:,np.newaxis]
-    q_norm = np.linalg.norm(q,axis=2)
-    less = q_norm<=delta
-    more = q_norm > delta
-    q[less] = q_norm[less,np.newaxis]**2 / 2 / delta
-    q[more] = q_norm[more,np.newaxis] - delta/2
-    return 0.5 * norm2(X-A) + lbd * q.sum()
+def loss_func(X,A,lbd,delta,B):
+    q = B.dot(X)
+    qnorm = norm(q,axis=1)
+    q = np.where(qnorm > delta, qnorm-delta/2, qnorm**2/2/delta)
+    q = lbd * q.sum()
+    return 0.5*norm2(X-A) + q 
 
 # 我愿称之为最强B矩阵生成法
 def gen_B(n,sparse=True):
@@ -125,7 +115,7 @@ def gen_C(n,sparse=True):
 def gen_D(n,sparse=True):
     X = np.r_[np.repeat(np.arange(n),np.arange(n-1,-1,-1)),np.repeat(np.arange(1,n),np.arange(1,n))]
     q = np.tile(np.arange(n-1,0,-1),reps=(n-1,1))
-    q[:,0] = np.arange(4)
+    q[:,0] = np.arange(n-1)
     q = np.tril(q)
     q = np.tril(q.cumsum(axis=1))
     Y = np.r_[np.arange((n)*(n-1)//2),0,q[q!=0]]
