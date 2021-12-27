@@ -9,8 +9,8 @@ step_size = lambda n,lbd,delta:1/(1+n*lbd/delta)
 def AGM(grad,x0,step_size,tol):
     t_0 = t = 1
     x = x_0 = x0
-    B = gen_B(len(x))
-    D = gen_D(len(x))
+    B = gen_B(x.shape[0])
+    D = B.T 
     loss = norm(grad(x,B,D))
     losses = [loss]
     while loss > tol:

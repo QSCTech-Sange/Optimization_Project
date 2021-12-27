@@ -19,13 +19,15 @@ def test_sparse(func,sparse_data):
 # 对矩阵（向量）求Frobenius norm
 # 不加 axis，是整个矩阵求norm（得到一个标量）
 # 加了 axis=0，是每一行求norm，得到一个向量，但是转为了n行1列的矩阵
+# !!!!!!!!!!!!!!!!!!
+# norm会转换成非sparse，但是通常norm从数值上就不是sparse的，所以无所谓
 def norm(matrix,axis=None):
     if axis:
-        if type(matrix)==np.ndarray:
+        if type(matrix)==np.ndarray or type(matrix)==np.matrix:
             return np.linalg.norm(matrix,axis=1).reshape((-1,1))
         return sp.sparse.linalg.norm(matrix,axis=1).reshape((-1,1))
     else:
-        if type(matrix)==np.ndarray:
+        if type(matrix)==np.ndarray or type(matrix)==np.matrix:
             return np.linalg.norm(matrix)
         return sp.sparse.linalg.norm(matrix)     
 
@@ -33,6 +35,8 @@ def norm(matrix,axis=None):
 # 已经验证过是相等的了
 # 返回的是标量！
 def norm2(matrix):
+    if type(matrix) == np.matrix:
+        return (np.array(matrix)**2).sum()
     if type(matrix)==np.ndarray:
         return (matrix**2).sum()
     return matrix.power(2).sum()
@@ -47,9 +51,15 @@ def grad_hub_vec(vec,delta):
 # delta 是参数
 def grad_hub_matrix(X,delta,A,labda,B,D):
     y = B.dot(X)
-    ynorm = norm(y,axis=1)
-    y = np.where(ynorm >= delta, y/ynorm, y/delta)
-    return X - A + labda * D.dot(y)
+    ynorm = norm(y,axis=1) # not sparse anymore, which is a FEATURE
+    ynorm[ynorm<=delta] = delta
+    y = y/ynorm
+    # if X is sparse, here return will be matrix. Convert to ndarray
+    # note here our return is always dense.
+    if type(X) == np.ndarray:
+        return X - A + labda * D.dot(y)
+    else:
+        return np.array(X - A + labda * D.dot(y))
         
 def mat2vec(mat):
     return mat.reshape(mat.shape[0]*mat.shape[1])
@@ -61,8 +71,8 @@ def vec2mat(vec,n,d):
 # X 格式类似 [x1,x2,x3,...]，每个xi是一个向量
 # 一个简单的 DFS
 def get_group(ans,tol=0.01):
-    if type(ans)!=np.ndarray:
-        ans = ans.todense()
+    if type(ans)!=np.ndarray and type(ans)!=np.matrix:
+        ans = np.array(ans.todense())
     groups = np.arange(len(ans))
     visited = [False] * len(ans)
     group_count = -1
@@ -100,28 +110,28 @@ def gen_B(n,sparse=True):
     return B if sparse else B.toarray()
 
 # 可能用不上了
-def gen_C(n,sparse=True):
-    Y = np.repeat(np.arange(n),n-1)
-    X = np.arange(n*(n-1))
-    q = np.tile(np.arange(n),reps=(n,1)).flatten()
-    p = np.arange(0,(n+1)*n,n+1)
-    Y = np.r_[Y,np.delete(q,p)]
-    X = np.r_[X,np.arange(n*(n-1))]
-    data = np.r_[np.ones(n*(n-1),dtype=np.int8),-np.ones(n*(n-1),dtype=np.int8)]
-    C = sps.csr_matrix((data,(X,Y)),shape=(n*(n-1),n))
-    return C if sparse else C.toarray()
+# def gen_C(n,sparse=True):
+#     Y = np.repeat(np.arange(n),n-1)
+#     X = np.arange(n*(n-1))
+#     q = np.tile(np.arange(n),reps=(n,1)).flatten()
+#     p = np.arange(0,(n+1)*n,n+1)
+#     Y = np.r_[Y,np.delete(q,p)]
+#     X = np.r_[X,np.arange(n*(n-1))]
+#     data = np.r_[np.ones(n*(n-1),dtype=np.int8),-np.ones(n*(n-1),dtype=np.int8)]
+#     C = sps.csr_matrix((data,(X,Y)),shape=(n*(n-1),n))
+#     return C if sparse else C.toarray()
 
 # 我愿称之为最强D矩阵生成法
-def gen_D(n,sparse=True):
-    X = np.r_[np.repeat(np.arange(n),np.arange(n-1,-1,-1)),np.repeat(np.arange(1,n),np.arange(1,n))]
-    q = np.tile(np.arange(n-1,0,-1),reps=(n-1,1))
-    q[:,0] = np.arange(n-1)
-    q = np.tril(q)
-    q = np.tril(q.cumsum(axis=1))
-    Y = np.r_[np.arange((n)*(n-1)//2),0,q[q!=0]]
-    data = np.r_[np.ones((n)*(n-1)//2,dtype=np.int8),-np.ones(n*(n-1)//2,dtype=np.int8)]
-    C = sps.csr_matrix((data,(X,Y)),shape=(n,n*(n-1)//2))
-    return C if sparse else C.toarray()
+# def gen_D(n,sparse=True):
+#     X = np.r_[np.repeat(np.arange(n),np.arange(n-1,-1,-1)),np.repeat(np.arange(1,n),np.arange(1,n))]
+#     q = np.tile(np.arange(n-1,0,-1),reps=(n-1,1))
+#     q[:,0] = np.arange(n-1)
+#     q = np.tril(q)
+#     q = np.tril(q.cumsum(axis=1))
+#     Y = np.r_[np.arange((n)*(n-1)//2),0,q[q!=0]]
+#     data = np.r_[np.ones((n)*(n-1)//2,dtype=np.int8),-np.ones(n*(n-1)//2,dtype=np.int8)]
+#     C = sps.csr_matrix((data,(X,Y)),shape=(n,n*(n-1)//2))
+#     return C if sparse else C.toarray()
 
 if __name__ == '__main__':
     A = np.array([12,24,10,0,0,0,0,0,0])

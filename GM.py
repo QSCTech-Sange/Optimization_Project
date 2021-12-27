@@ -19,7 +19,7 @@ def BB(X,X_1,gX,gX_1):
 
 def GM(X,func,grad,tol):
     B = gen_B(len(X))
-    D = gen_D(len(X))
+    D = B.T
     gX = grad(X,B,D)
     norm_ = norm(gX)
     loss = [func(X,B)] ##修改了loss function的定义
@@ -33,7 +33,7 @@ def GM(X,func,grad,tol):
 
 def GM_BB(X,func,grad,tol):
     B = gen_B(len(X))
-    D = gen_D(len(X))
+    D = B.T
     gX = grad(X,B,D)
     iter = 0
     norm_2 = norm2(gX)
