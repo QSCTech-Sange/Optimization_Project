@@ -17,7 +17,7 @@ def weight(i, j, constant, k, X):
         return 0
 
 def loss_func2(X,A,lbd,B,k,constant):
-    q = np.squeeze(norm(B.dot(X), axis = 0))
+    q = np.squeeze(norm(B.dot(X), axis = 1))
     pairs = []
     for i in range(len(A) - 1):
         for j in range(i + 1, len(A)):
