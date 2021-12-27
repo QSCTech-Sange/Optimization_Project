@@ -5,8 +5,9 @@ from func_tools import *
 import pandas as pd
 
 def backtrack(X,func,gX,d,B,alpha=1,gamma=0.01,sigma=0.5):
-    right = func(X,B) + alpha*gamma*mat2vec(gX.T).dot(mat2vec(d))
-    while func(X+alpha*d,B) > right:
+    right_1 = func(X,B)
+    right_2 = gamma*mat2vec(gX).dot(mat2vec(d))
+    while func(X+alpha*d,B) > right_1 + right_2 * alpha:
         alpha = alpha * sigma
     return alpha
 
@@ -19,7 +20,7 @@ def BB(X,X_1,gX,gX_1):
 
 def GM(X,func,grad,tol):
     B = gen_B(len(X))
-    D = gen_D(len(X))
+    D = B.T
     gX = grad(X,B,D)
     norm_ = norm(gX)
     loss = [func(X,B)] ##修改了loss function的定义
@@ -33,7 +34,7 @@ def GM(X,func,grad,tol):
 
 def GM_BB(X,func,grad,tol):
     B = gen_B(len(X))
-    D = gen_D(len(X))
+    D = B.T
     gX = grad(X,B,D)
     iter = 0
     norm_2 = norm2(gX)
