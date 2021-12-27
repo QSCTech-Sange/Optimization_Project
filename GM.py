@@ -5,8 +5,9 @@ from func_tools import *
 import pandas as pd
 
 def backtrack(X,func,gX,d,B,alpha=1,gamma=0.01,sigma=0.5):
-    right = func(X,B) + alpha*gamma*mat2vec(gX.T).dot(mat2vec(d))
-    while func(X+alpha*d,B) > right:
+    right_1 = func(X,B)
+    right_2 = gamma*mat2vec(gX).dot(mat2vec(d))
+    while func(X+alpha*d,B) > right_1 + right_2 * alpha:
         alpha = alpha * sigma
     return alpha
 
