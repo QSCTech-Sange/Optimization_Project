@@ -27,11 +27,11 @@ def AGM(grad,x0,step_size,tol):
         losses.append(loss)
     return x,losses
 
-def AGM_weighted(grad,x0,step_size,tol,k,constant):
+def AGM_weighted(grad,x0,step_size,tol,k,constant,watch=False):
     t_0 = t = 1
     x = x_0 = x0
-    B = gen_B(x.shape[0],sparse=False)
-    W = gen_W(x,k,constant)
+    B = gen_B(x.shape[0],sparse=True)
+    W = gen_W(x,k,constant,sparse=True)
     loss = norm(grad(x,B,W))
     losses = [loss]
     while loss > tol:
@@ -46,5 +46,6 @@ def AGM_weighted(grad,x0,step_size,tol,k,constant):
         x = y - step_size * ngrad
         loss = norm(ngrad)
         losses.append(loss)
-        # print(loss)
+        if watch:
+            print(loss)
     return x,losses
