@@ -18,7 +18,7 @@ def test_sparse(func,sparse_data):
 
 # 对矩阵（向量）求Frobenius norm
 # 不加 axis，是整个矩阵求norm（得到一个标量）
-# 加了 axis=0，是每一行求norm，得到一个向量，但是转为了n行1列的矩阵
+# 加了 axis=1，是每一行求norm，得到一个向量，但是转为了n行1列的矩阵
 # !!!!!!!!!!!!!!!!!!
 # norm会转换成非sparse，但是通常norm从数值上就不是sparse的，所以无所谓
 def norm(matrix,axis=None):
@@ -34,12 +34,19 @@ def norm(matrix,axis=None):
 # 高效范数方
 # 已经验证过是相等的了
 # 返回的是标量！
-def norm2(matrix):
-    if type(matrix) == np.matrix:
-        return (np.array(matrix)**2).sum()
-    if type(matrix)==np.ndarray:
-        return (matrix**2).sum()
-    return matrix.power(2).sum()
+def norm2(matrix,axis=None):
+    if axis:
+        if type(matrix) == np.matrix:
+            return (np.array(matrix)**2).sum(axis=1).reshape((-1,1))
+        if type(matrix)==np.ndarray:
+            return (matrix**2).sum(axis=1).reshape((-1,1))
+        return matrix.power(2).sum(axis=1).reshape((-1,1))       
+    else:
+        if type(matrix) == np.matrix:
+            return (np.array(matrix)**2).sum()
+        if type(matrix)==np.ndarray:
+            return (matrix**2).sum()
+        return matrix.power(2).sum()
 
 # huber_norm 对于向量的梯度
 # 已经验证过是相等的了
@@ -132,6 +139,84 @@ def gen_B(n,sparse=True):
 #     data = np.r_[np.ones((n)*(n-1)//2,dtype=np.int8),-np.ones(n*(n-1)//2,dtype=np.int8)]
 #     C = sps.csr_matrix((data,(X,Y)),shape=(n,n*(n-1)//2))
 #     return C if sparse else C.toarray()
+
+# def gen_W(a,k,B,constant,sparse=False):
+#     n = a.shape[0]
+#     begin = (n-1) * (n-2) // 2
+#     E = norm2(B.dot(a),axis=1).flatten()
+#     D = B.T
+#     D[D==-1] = 1
+#     W = np.zeros((n,n*(n-1)//2))
+#     for i in range(n):
+#         Q = D[i]*E
+#         Q2 = Q.argsort()[begin:begin+k]
+#         mask = np.ones(Q.shape,dtype=np.bool)
+#         mask[Q2] = False
+#         Q[mask] = 0
+#         Q[Q2] = np.exp(-constant * Q[Q2])
+#         W[i] = Q
+#     return sps.csr_matrix(W) if sparse else W
+
+def gen_W(a,k,constant,sparse=False):
+    n = a.shape[0]
+    W = np.zeros((n,n*(n-1)//2))
+    neighbor_dist = []
+    for i in range(n):
+        neighbor_dist.append([])
+        for j in range(n):
+            neighbor_dist[-1].append(norm2(a[i] - a[j]))
+    neighbor_threshold = []
+    for i in neighbor_dist:
+        neighbor_threshold.append(sorted(i)[k])
+    pick = []
+    for i in range(n):
+        for j in range(i+1,n):
+            if neighbor_dist[i][j] <= neighbor_threshold[i]:
+                pick.append((i,j))
+    for i,j in pick:
+        nj = n*i - i*(i+1)//2 + j - i - 1
+        W[i][nj] = np.exp(-constant * norm2(a[i] - a[j]))
+        W[j][nj] = -np.exp(-constant * norm2(a[i] - a[j]))
+    return sps.csr_matrix(W) if sparse else W
+
+def weight_grad(X,A,B,W,lbd):
+    Q = B.dot(X)
+    Q = Q / norm(Q,axis=1)
+    return W.dot(Q)*lbd + X - A
+
+def gen_nw(a,k,constant,sparse=False):
+    n = a.shape[0]
+    W = np.zeros(n*(n-1)//2)
+    neighbor_dist = []
+    for i in range(n):
+        neighbor_dist.append([])
+        for j in range(n):
+            neighbor_dist[-1].append(norm2(a[i] - a[j]))
+    neighbor_threshold = []
+    for i in neighbor_dist:
+        neighbor_threshold.append(sorted(i)[k])
+    pick = []
+    for i in range(n):
+        for j in range(i+1,n):
+            if neighbor_dist[i][j] <= neighbor_threshold[i]:
+                pick.append((i,j))
+    for i,j in pick:
+        nj = n*i - i*(i+1)//2 + j - i - 1
+        W[nj] = np.exp(-constant * norm2(a[i] - a[j]))
+    return sps.csr_matrix(W) if sparse else W
+
+def loss_func_weighted(X,A,lbd,B,nw):
+    return (0.5 * norm2(X-A,axis=1)).sum() + lbd * nw.dot(norm(B.dot(X),axis=1)) 
+
+def auto_group(ans,group_count):
+    l=0
+    r=999
+    while l<r:
+        mid = (l + r) / 2
+        if len(np.unique(get_group(ans,mid))) < group_count: r = mid
+        elif len(np.unique(get_group(ans,mid))) > group_count: l = mid
+        else: return get_group(ans,mid)
+    return get_group(ans,l)
 
 if __name__ == '__main__':
     A = np.array([12,24,10,0,0,0,0,0,0])
