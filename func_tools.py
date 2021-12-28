@@ -140,6 +140,74 @@ def gen_B(n,sparse=True):
 #     C = sps.csr_matrix((data,(X,Y)),shape=(n,n*(n-1)//2))
 #     return C if sparse else C.toarray()
 
+# def gen_W(a,k,B,constant,sparse=False):
+#     n = a.shape[0]
+#     begin = (n-1) * (n-2) // 2
+#     E = norm2(B.dot(a),axis=1).flatten()
+#     D = B.T
+#     D[D==-1] = 1
+#     W = np.zeros((n,n*(n-1)//2))
+#     for i in range(n):
+#         Q = D[i]*E
+#         Q2 = Q.argsort()[begin:begin+k]
+#         mask = np.ones(Q.shape,dtype=np.bool)
+#         mask[Q2] = False
+#         Q[mask] = 0
+#         Q[Q2] = np.exp(-constant * Q[Q2])
+#         W[i] = Q
+#     return sps.csr_matrix(W) if sparse else W
+
+def gen_W(a,k,constant,sparse=False):
+    n = a.shape[0]
+    W = np.zeros((n,n*(n-1)//2))
+    neighbor_dist = []
+    for i in range(n):
+        neighbor_dist.append([])
+        for j in range(n):
+            neighbor_dist[-1].append(norm2(a[i] - a[j]))
+    neighbor_threshold = []
+    for i in neighbor_dist:
+        neighbor_threshold.append(sorted(i)[k])
+    pick = []
+    for i in range(n):
+        for j in range(i+1,n):
+            if neighbor_dist[i][j] <= neighbor_threshold[i]:
+                pick.append((i,j))
+    for i,j in pick:
+        nj = n*i - i*(i+1)//2 + j - i - 1
+        W[i][nj] = np.exp(-constant * norm2(a[i] - a[j]))
+        W[j][nj] = -np.exp(-constant * norm2(a[i] - a[j]))
+    return sps.csr_matrix(W) if sparse else W
+
+def weight_grad(X,A,B,W,lbd):
+    Q = B.dot(X)
+    Q = Q / norm(Q,axis=1)
+    return W.dot(Q)*lbd + X - A
+
+def gen_nw(a,k,constant,sparse=False):
+    n = a.shape[0]
+    W = np.zeros(n*(n-1)//2)
+    neighbor_dist = []
+    for i in range(n):
+        neighbor_dist.append([])
+        for j in range(n):
+            neighbor_dist[-1].append(norm2(a[i] - a[j]))
+    neighbor_threshold = []
+    for i in neighbor_dist:
+        neighbor_threshold.append(sorted(i)[k])
+    pick = []
+    for i in range(n):
+        for j in range(i+1,n):
+            if neighbor_dist[i][j] <= neighbor_threshold[i]:
+                pick.append((i,j))
+    for i,j in pick:
+        nj = n*i - i*(i+1)//2 + j - i - 1
+        W[nj] = np.exp(-constant * norm2(a[i] - a[j]))
+    return sps.csr_matrix(W) if sparse else W
+
+def loss_func_weighted(X,A,lbd,B,nw):
+    return (0.5 * norm2(X-A,axis=1)).sum() + lbd * nw.dot(norm(B.dot(X),axis=1)) 
+
 if __name__ == '__main__':
     A = np.array([12,24,10,0,0,0,0,0,0])
     sA = sp.sparse.csr_matrix(A)
