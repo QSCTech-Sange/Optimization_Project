@@ -24,9 +24,16 @@ def gen_points(rng, centroids, N, sigma=1):
 def get_O(N):
     X = np.linspace(-10,10,N*2)
     Y = (100-X**2)**0.5
-    sub = np.random.choice(N*2,replace=False,size=N//2)
-    sub_ = np.random.choice(N*2,replace=False,size=N-N//2)
-    return np.r_[np.c_[X[sub],Y[sub]],np.c_[X[sub_],-Y[sub_]]]
+    sub = np.linspace(-10,-7,N*2//5,dtype=np.int8)
+    sub_ = np.linspace(7,10,N*2//5,dtype=np.int8)
+    sub__ = np.linspace(-7,7,N*2//5,dtype=np.int8)
+    a = np.c_[X[sub],Y[sub]]
+    b = np.c_[X[sub_],Y[sub_]]
+    c = np.c_[X[sub__],Y[sub__]]
+    d = np.c_[X[sub],-Y[sub]]
+    e = np.c_[X[sub_],-Y[sub_]]
+    f = np.c_[X[sub__],-Y[sub__]]    
+    return np.r_[a,b,c,d,e,f]
 
 def get_P(N):
     X = np.full(N,20)
