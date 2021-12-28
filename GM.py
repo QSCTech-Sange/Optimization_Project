@@ -38,10 +38,10 @@ def backtrack_Weighted(X,func,gX,d,B,nW,alpha=1,gamma=0.01,sigma=0.5):
         alpha = alpha * sigma
     return alpha
 
-def GM_Weighted(X,func,grad,tol,k,ctt):
+def GM_Weighted(X,func,grad,tol,k,ctt,watch=False):
     B = gen_B(X.shape[0])
-    W = gen_W(X,k,constant=ctt)
-    nW = gen_nw(X,k,ctt)
+    W = gen_W(X,k,constant=ctt,sparse=True)
+    nW = gen_nw(X,k,ctt,sparse=True)
     gX = grad(X,B,W)
     norm_ = norm(gX)
     losses = [norm_]
@@ -51,7 +51,8 @@ def GM_Weighted(X,func,grad,tol,k,ctt):
         gX = grad(X,B,W)
         norm_ = norm(gX)
         losses.append(norm_)
-        # print(norm_)
+        if watch:
+            print(norm_)
     return X,losses
 
 def GM_BB(X,func,grad,tol):
