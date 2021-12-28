@@ -18,7 +18,7 @@ def test_sparse(func,sparse_data):
 
 # 对矩阵（向量）求Frobenius norm
 # 不加 axis，是整个矩阵求norm（得到一个标量）
-# 加了 axis=0，是每一行求norm，得到一个向量，但是转为了n行1列的矩阵
+# 加了 axis=1，是每一行求norm，得到一个向量，但是转为了n行1列的矩阵
 # !!!!!!!!!!!!!!!!!!
 # norm会转换成非sparse，但是通常norm从数值上就不是sparse的，所以无所谓
 def norm(matrix,axis=None):
@@ -34,12 +34,19 @@ def norm(matrix,axis=None):
 # 高效范数方
 # 已经验证过是相等的了
 # 返回的是标量！
-def norm2(matrix):
-    if type(matrix) == np.matrix:
-        return (np.array(matrix)**2).sum()
-    if type(matrix)==np.ndarray:
-        return (matrix**2).sum()
-    return matrix.power(2).sum()
+def norm2(matrix,axis=None):
+    if axis:
+        if type(matrix) == np.matrix:
+            return (np.array(matrix)**2).sum(axis=1).reshape((-1,1))
+        if type(matrix)==np.ndarray:
+            return (matrix**2).sum(axis=1).reshape((-1,1))
+        return matrix.power(2).sum(axis=1).reshape((-1,1))       
+    else:
+        if type(matrix) == np.matrix:
+            return (np.array(matrix)**2).sum()
+        if type(matrix)==np.ndarray:
+            return (matrix**2).sum()
+        return matrix.power(2).sum()
 
 # huber_norm 对于向量的梯度
 # 已经验证过是相等的了
