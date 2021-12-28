@@ -11,7 +11,7 @@ def backtrack(X,func,gX,d,B,alpha=1,gamma=0.01,sigma=0.5):
 
 def BFGS(X,func,grad,tol,p=1):
     B = gen_B(len(X))
-    D = gen_D(len(X))
+    D = B.T
     n = len(X)
     d = len(X[0])
     H = p*np.eye(n*d)

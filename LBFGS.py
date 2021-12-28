@@ -8,14 +8,15 @@ import pandas as pd
 def backtrack(X,func,gX,d,B,alpha=1,gamma=0.01,sigma=0.5):
     right =  gamma*mat2vec(gX).T.dot(mat2vec(d))  ## first vec than T
     ## right should not include alpha
-    while func(X+alpha*d,B) - func(X,B)> alpha * right: 
+    func_value = func(X,B)
+    while func(X+alpha*d,B) - func_value> alpha * right: 
         alpha = alpha * sigma
-        # print("alpha:" , alpha)
+        print("alpha:" , alpha)
     return alpha
 
 def LBFGS(X,func,grad,tol,p=1,m=5):
     B = gen_B(len(X))
-    D = gen_D(len(X))
+    D = B.T
     n = len(X)
     d = len(X[0])
     H = p*np.eye(n*d)
