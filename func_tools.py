@@ -208,6 +208,16 @@ def gen_nw(a,k,constant,sparse=False):
 def loss_func_weighted(X,A,lbd,B,nw):
     return (0.5 * norm2(X-A,axis=1)).sum() + lbd * nw.dot(norm(B.dot(X),axis=1)) 
 
+def auto_group(ans,group_count):
+    l=0
+    r=999
+    while l<r:
+        mid = (l + r) / 2
+        if len(np.unique(get_group(ans,mid))) < group_count: r = mid
+        elif len(np.unique(get_group(ans,mid))) > group_count: l = mid
+        else: return get_group(ans,mid)
+    return get_group(ans,l)
+
 if __name__ == '__main__':
     A = np.array([12,24,10,0,0,0,0,0,0])
     sA = sp.sparse.csr_matrix(A)
