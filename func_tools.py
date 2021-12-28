@@ -216,6 +216,7 @@ def auto_group(ans,group_count):
         if len(np.unique(get_group(ans,mid))) < group_count: r = mid
         elif len(np.unique(get_group(ans,mid))) > group_count: l = mid
         else: return get_group(ans,mid)
+    print("The Tolrence is", l)
     return get_group(ans,l)
 
 if __name__ == '__main__':
