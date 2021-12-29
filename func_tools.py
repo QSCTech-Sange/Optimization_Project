@@ -5,6 +5,7 @@
 import scipy as sp
 import scipy.sparse as sps
 import numpy as np
+from sklearn import metrics
 
 # 验证一个函数是否对稀疏矩阵也有效
 def test_sparse(func,sparse_data):
@@ -216,7 +217,12 @@ def auto_group(ans,group_count):
         if len(np.unique(get_group(ans,mid))) < group_count: r = mid
         elif len(np.unique(get_group(ans,mid))) > group_count: l = mid
         else: return get_group(ans,mid)
+    print("The Tolrence is", l)
     return get_group(ans,l)
+
+def purity_score(y_true, y_pred):
+    contingency_matrix = metrics.cluster.contingency_matrix(y_true, y_pred)
+    return np.sum(np.amax(contingency_matrix, axis=0)) / np.sum(contingency_matrix) 
 
 if __name__ == '__main__':
     A = np.array([12,24,10,0,0,0,0,0,0])
