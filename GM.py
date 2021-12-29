@@ -17,7 +17,7 @@ def BB(X,X_1,gX,gX_1):
     alpha = sk_1.T.dot(sk_1) / (sk_1.T.dot(y_1))
     return alpha
 
-def GM(X,func,grad,tol):
+def GM(X,func,grad,tol,watch=False):
     B = gen_B(X.shape[0])
     D = B.T
     gX = grad(X,B,D)
@@ -29,6 +29,8 @@ def GM(X,func,grad,tol):
         gX = grad(X,B,D)
         norm_ = norm(gX)
         loss.append(func(X,B)) ##修改了loss function的定义
+        if watch:
+            print(norm_)
     return X,loss
 
 def backtrack_Weighted(X,func,gX,d,B,nW,alpha=1,gamma=0.01,sigma=0.5):
@@ -45,14 +47,14 @@ def GM_Weighted(X,func,grad,tol,k,ctt,watch=False):
     gX = grad(X,B,W)
     norm_ = norm(gX)
     losses = [norm_]
-    while norm_ > tol:
+    while norm_ > tol and len(losses) < 10000:
         step_size = backtrack_Weighted(X,func,gX,-gX,B,nW)
         X = X - step_size * gX
         gX = grad(X,B,W)
         norm_ = norm(gX)
         losses.append(norm_)
         if watch:
-            print(norm_)
+            print(lennorm_)
     return X,losses
 
 def GM_BB(X,func,grad,tol):
